@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+
+# OS files
+.DS_Store
+
+# Local config overrides
+config/local.json
+
+# IDE
+.idea/
+.vscode/

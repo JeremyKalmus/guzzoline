@@ -1,0 +1,63 @@
+name: guzzoline
+version: 1.0.0
+description: Token efficiency and headless polecat mode for Gas Town
+type: town-plugin
+scope: town
+
+# Guzzoline - Fuel Conservation for the Wasteland
+# "Who controls the guzzoline, controls the waste!"
+#
+# This plugin provides:
+# 1. Headless polecat mode (diff-only output, minimal tokens)
+# 2. Token accounting in events.jsonl
+# 3. Model tiering recommendations
+
+install:
+  location: plugins/guzzoline
+
+  # Copy headless formula to beads formulas
+  templates:
+    - source: formulas/mol-polecat-headless.formula.toml
+      dest: .beads/formulas/mol-polecat-headless.formula.toml
+
+  # Register hooks for token accounting
+  hooks:
+    Stop:
+      - command: "plugins/guzzoline/hooks/token-accounting.sh"
+        scope: polecat
+
+config:
+  # Token budget caps (0 = unlimited)
+  token_budget:
+    polecat: 50000
+    polecat-headless: 10000
+    witness: 20000
+    refinery: 20000
+
+  # Model assignments (can override settings.json)
+  models:
+    polecat: sonnet
+    polecat-headless: haiku
+    witness: haiku
+    refinery: haiku
+
+  # Headless mode triggers
+  headless_triggers:
+    - type: task
+      patterns:
+        - "refactor*"
+        - "rename*"
+        - "update*imports*"
+        - "fix*typo*"
+    - type: label
+      values:
+        - "headless"
+        - "mechanical"
+        - "no-design"
+
+gates:
+  # Kill runaway agents exceeding budget
+  token_exceeded:
+    type: condition
+    metric: "tokens.total > config.token_budget[agent_type]"
+    action: "gt session kill"

@@ -1,0 +1,52 @@
+# Guzzoline Headless Polecat Formula
+# Minimal token footprint for mechanical code generation
+
+description = """
+HEADLESS MODE. Output only: diffs, bead updates, exit signal.
+NO explanations. NO summaries. NO reasoning.
+If blocked: BLOCKED: <reason> - nothing else."""
+formula = "mol-polecat-headless"
+version = 1
+
+[[steps]]
+id = "load-and-verify"
+title = "Load assignment"
+description = """
+```bash
+gt prime && bd prime
+bd show {{issue}}
+```
+Verify you understand the task. If unclear: `BLOCKED: unclear spec`"""
+
+[[steps]]
+id = "execute"
+title = "Execute changes"
+needs = ["load-and-verify"]
+description = """
+1. Make changes (no commentary)
+2. Stage: `git add -A`
+3. Commit: `git commit -m "<type>: <summary> ({{issue}})"`
+4. Push: `git push -u origin HEAD`
+
+If tests required:
+```bash
+go test ./... # or appropriate
+```
+Tests fail → fix silently. No explanation."""
+
+[[steps]]
+id = "signal-done"
+title = "Signal and exit"
+needs = ["execute"]
+description = """
+```bash
+gt done
+```
+EXIT IMMEDIATELY. No summary. No "I completed X". Just exit.
+
+Token discipline: every character after `gt done` is waste."""
+
+[vars]
+[vars.issue]
+description = "Assigned issue ID"
+required = true
