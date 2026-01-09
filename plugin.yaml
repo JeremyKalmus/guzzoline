@@ -3,6 +3,8 @@ version: 1.0.0
 description: Token efficiency and headless polecat mode for Gas Town
 type: town-plugin
 scope: town
+author: "Gas Town"
+repository: "https://github.com/JeremyKalmus/guzzoline"
 
 # Guzzoline - Fuel Conservation for the Wasteland
 # "Who controls the guzzoline, controls the waste!"
@@ -11,6 +13,9 @@ scope: town
 # 1. Headless polecat mode (diff-only output, minimal tokens)
 # 2. Token accounting in events.jsonl
 # 3. Model tiering recommendations
+# 4. Budget enforcement
+
+gastown_version: ">=1.0.0"
 
 install:
   location: plugins/guzzoline
@@ -20,11 +25,40 @@ install:
     - source: formulas/mol-polecat-headless.formula.toml
       dest: .beads/formulas/mol-polecat-headless.formula.toml
 
-  # Register hooks for token accounting
+  # Create config directory
+  directories:
+    - .gt/guzzoline/
+
+  # Register hooks
   hooks:
+    # Token accounting on session end (polecat scope)
     Stop:
-      - command: "plugins/guzzoline/hooks/token-accounting.sh"
+      - command: "${GT_ROOT}/plugins/guzzoline/hooks/token-accounting.sh"
         scope: polecat
+        matcher: "*/polecats/*"
+
+  # Post-install instructions (shown to user)
+  post_install: |
+    Guzzoline installed successfully!
+
+    To enable plugin context loading, add to your SessionStart hook:
+      $HOME/gt/.gt/hooks/load-plugin-contexts.sh
+
+    To use headless mode:
+      gt sling <issue> <rig> --formula mol-polecat-headless
+
+    Or label issues with 'headless' for auto-detection.
+
+    Model recommendations applied to .gt/settings.json:
+      - polecat: sonnet (design work)
+      - polecat-headless: haiku (mechanical work)
+      - witness: haiku (patrol loops)
+      - refinery: haiku (merge processing)
+
+uninstall:
+  remove:
+    - .beads/formulas/mol-polecat-headless.formula.toml
+    - .gt/guzzoline/
 
 config:
   # Token budget caps (0 = unlimited)
@@ -33,15 +67,16 @@ config:
     polecat-headless: 10000
     witness: 20000
     refinery: 20000
+    mayor: 100000
 
-  # Model assignments (can override settings.json)
+  # Model assignments (recommendation - apply to .gt/settings.json)
   models:
     polecat: sonnet
     polecat-headless: haiku
     witness: haiku
     refinery: haiku
 
-  # Headless mode triggers
+  # Headless mode triggers (for auto-detection)
   headless_triggers:
     - type: task
       patterns:
@@ -54,6 +89,19 @@ config:
         - "headless"
         - "mechanical"
         - "no-design"
+
+config_schema:
+  type: object
+  properties:
+    token_budget:
+      type: object
+      description: "Token limits per agent type (0 = unlimited)"
+    models:
+      type: object
+      description: "Model assignments per agent type"
+    headless_triggers:
+      type: array
+      description: "Patterns that trigger headless mode"
 
 gates:
   # Kill runaway agents exceeding budget
